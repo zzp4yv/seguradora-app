@@ -24,7 +24,7 @@ function rateLimiter(req, res, next) {
 
     record.count++;
     if (record.count > RATE_LIMIT_MAX) {
-        return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta de novo máis tarde.' });
+        return res.status(429).json({ error: 'Muitas solicitações. Tente novamente mais tarde.' });
     }
     next();
 }
@@ -264,7 +264,7 @@ app.put('/api/clientes/:id', (req, res) => {
             sanitizeInput(estado_civil), sanitizeInput(profissao), id
         );
 
-        if (numero_apose) {
+        if (numero_apose || marca || modelo || ano_veiculo || placa || data_inicio || data_fim || valor_premio) {
             const existsApose = db.prepare('SELECT id FROM apolices WHERE cliente_id = ?').get(id);
             if (existsApose) {
                 db.prepare(`
@@ -272,7 +272,7 @@ app.put('/api/clientes/:id', (req, res) => {
                                        data_inicio=?, data_fim=?, valor_premio=?, valor_franquia=?, classe_bonus=?
                     WHERE cliente_id=?
                 `).run(
-                    sanitizeInput(numero_apose), sanitizeInput(marca), sanitizeInput(modelo),
+                    numero_apose ? sanitizeInput(numero_apose) : null, sanitizeInput(marca), sanitizeInput(modelo),
                     ano_veiculo ? parseInt(ano_veiculo) : null, sanitizeInput(placa),
                     sanitizeInput(chassi), data_inicio, data_fim,
                     valor_premio ? parseFloat(valor_premio) : null,
@@ -285,7 +285,7 @@ app.put('/api/clientes/:id', (req, res) => {
                                          data_inicio, data_fim, valor_premio, valor_franquia, classe_bonus)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `).run(
-                    id, sanitizeInput(numero_apose), sanitizeInput(marca), sanitizeInput(modelo),
+                    id, numero_apose ? sanitizeInput(numero_apose) : null, sanitizeInput(marca), sanitizeInput(modelo),
                     ano_veiculo ? parseInt(ano_veiculo) : null, sanitizeInput(placa),
                     sanitizeInput(chassi), data_inicio, data_fim,
                     valor_premio ? parseFloat(valor_premio) : null,
