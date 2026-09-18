@@ -1,0 +1,10 @@
+node_modules/
+seguradora.db
+.env
+*.log
+.DS_Store
+coverage/
+dist/
+build/
+
+*.db
