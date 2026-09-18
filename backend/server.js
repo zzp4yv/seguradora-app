@@ -5,7 +5,7 @@ const path = require('path');
 const { getDb, initDatabase } = require('./database');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Rate limiting
 const rateLimitMap = new Map();
@@ -195,14 +195,14 @@ app.post('/api/clientes', (req, res) => {
                 sanitizeInput(estado_civil), sanitizeInput(profissao)
             );
 
-            if (numero_apose) {
+            if (numero_apose || marca || modelo || ano_veiculo || placa || valor_premio) {
                 db.prepare(`
                     INSERT INTO apolices (cliente_id, numero_apose, marca, modelo, ano_veiculo, placa, chassi,
                                          data_inicio, data_fim, valor_premio, valor_franquia, classe_bonus)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `).run(
                     clienteId.lastInsertRowid,
-                    sanitizeInput(numero_apose), sanitizeInput(marca), sanitizeInput(modelo),
+                    numero_apose ? sanitizeInput(numero_apose) : null, sanitizeInput(marca), sanitizeInput(modelo),
                     ano_veiculo ? parseInt(ano_veiculo) : null, sanitizeInput(placa),
                     sanitizeInput(chassi), data_inicio, data_fim,
                     valor_premio ? parseFloat(valor_premio) : null,

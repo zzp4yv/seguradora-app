@@ -42,7 +42,7 @@ function initDatabase() {
         CREATE TABLE IF NOT EXISTS apolices (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             cliente_id INTEGER NOT NULL,
-            numero_apose TEXT UNIQUE NOT NULL,
+            numero_apose TEXT UNIQUE,
             marca TEXT,
             modelo TEXT,
             ano_veiculo INTEGER,
