@@ -4,6 +4,7 @@ services:
   app:
     build: .
     container_name: seguradora-app
+    user: "0:0"
     ports:
       - "${HOST_PORT:-3001}:3001"
     volumes:
