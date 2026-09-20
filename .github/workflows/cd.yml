@@ -33,10 +33,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ ! -f /opt/seguradora-app/.env ]; then
-            cat > /opt/seguradora-app/.env <<'EOF'
-HOST_PORT=3001
-NODE_ENV=production
-EOF
+            printf '%s\n' 'HOST_PORT=3001' 'NODE_ENV=production' > /opt/seguradora-app/.env
             echo ".env criado com defaults"
           else
             echo ".env existente mantido"
