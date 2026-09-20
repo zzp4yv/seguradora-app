@@ -29,6 +29,19 @@ jobs:
         run: |
           cp /opt/seguradora-app/src/docker-compose.prod.yml /opt/seguradora-app/docker-compose.prod.yml
 
+      - name: Garante .env de produção
+        run: |
+          set -euo pipefail
+          if [ ! -f /opt/seguradora-app/.env ]; then
+            cat > /opt/seguradora-app/.env <<'EOF'
+HOST_PORT=3001
+NODE_ENV=production
+EOF
+            echo ".env criado com defaults"
+          else
+            echo ".env existente mantido"
+          fi
+
       - name: Sobe a aplicação
         run: |
           set -euo pipefail
