@@ -1,3 +1,7 @@
+# Configuração de produção usada pelo CD (runner self-hosted na dockeroxi).
+# O deploy cria/copia este arquivo em /opt/seguradora-app/docker-compose.prod.yml
+# e roda: docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+
 version: '3.8'
 
 services:

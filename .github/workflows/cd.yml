@@ -1,0 +1,54 @@
+name: CD (dockeroxi)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    # exige o runner self-hosted instalado na dockeroxi (ver bootstrap via
+    # lab-access-manager) — sem ele este job fica pendurado esperando um
+    # runner que nunca aparece.
+    runs-on: [self-hosted, dockeroxi]
+    concurrency:
+      group: seguradora-app-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sincroniza código-fonte para o diretório de deploy
+        run: |
+          set -euo pipefail
+          rm -rf /opt/seguradora-app/src
+          mkdir -p /opt/seguradora-app/src
+          cp -a ./. /opt/seguradora-app/src/
+          rm -rf /opt/seguradora-app/src/.git
+
+      - name: Sincroniza docker-compose.prod.yml
+        run: |
+          cp /opt/seguradora-app/src/docker-compose.prod.yml /opt/seguradora-app/docker-compose.prod.yml
+
+      - name: Sobe a aplicação
+        run: |
+          set -euo pipefail
+          cd /opt/seguradora-app
+          docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+
+      - name: Limpa cache de build antigo (disco limitado)
+        run: docker builder prune -af --filter until=72h || true
+
+      - name: Verifica saúde do serviço
+        run: |
+          set -euo pipefail
+          source /opt/seguradora-app/.env
+          for i in $(seq 1 10); do
+            if curl -fsS "http://127.0.0.1:${HOST_PORT:-3001}/api/stats" >/dev/null; then
+              echo "OK: serviço respondendo"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "FALHA: serviço não respondeu após deploy"
+          docker compose -f /opt/seguradora-app/docker-compose.prod.yml --env-file /opt/seguradora-app/.env logs --tail=100
+          exit 1

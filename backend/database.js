@@ -1,7 +1,7 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const dbPath = path.join(__dirname, '../seguradora.db');
+const dbPath = process.env.DB_PATH || path.join(__dirname, '../seguradora.db');
 let db;
 
 function getDb() {
