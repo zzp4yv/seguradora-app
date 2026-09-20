@@ -6,7 +6,8 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build:
+      context: /opt/seguradora-app/src
     container_name: seguradora-app
     ports:
       - "${HOST_PORT:-3001}:3001"
