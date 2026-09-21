@@ -3,7 +3,16 @@ name: CD (dockeroxi)
 on:
   push:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      seed_crm:
+        description: 'Popular seguradora com os clientes do CRM'
+        required: false
+        default: 'false'
+      force:
+        description: 'Limpar banco antes (FORCE=1)'
+        required: false
+        default: 'false'
 
 jobs:
   deploy:
@@ -62,3 +71,37 @@ jobs:
           echo "FALHA: serviço não respondeu após deploy"
           docker compose -f /opt/seguradora-app/docker-compose.prod.yml --env-file /opt/seguradora-app/.env logs --tail=100
           exit 1
+
+  seed-crm:
+    name: Seed do CRM (dockeroxi)
+    # job manual: Actions > CD (dockeroxi) > Run workflow > seed_crm=true
+    # copia snapshot do banco do CRM p/ dentro do container e popula a
+    # seguradora com os mesmos clientes (nome/cpf/email/telefone + apólice).
+    # aborta sem alterar nada se o banco já tiver clientes (a menos que force=true).
+    runs-on: [self-hosted, dockeroxi]
+    if: github.event_name == 'workflow_dispatch' && inputs.seed_crm == 'true'
+    concurrency:
+      group: seguradora-app-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Copia snapshot do banco do CRM para dentro do container
+        run: |
+          set -euo pipefail
+          docker cp /opt/crm-seguros/data/crm-seguros.db seguradora-app:/tmp/crm-seguros.db
+          docker cp /opt/crm-seguros/data/crm-seguros.db-wal seguradora-app:/tmp/crm-seguros.db-wal || true
+          docker cp /opt/crm-seguros/data/crm-seguros.db-shm seguradora-app:/tmp/crm-seguros.db-shm || true
+
+      - name: Popula seguradora com clientes do CRM
+        run: |
+          set -euo pipefail
+          docker exec -e CRM_DB_PATH=/tmp/crm-seguros.db -e FORCE=${{ inputs.force == 'true' && '1' || '0' }} seguradora-app node backend/seed_from_crm.js
+
+      - name: Confere via API
+        run: |
+          set -euo pipefail
+          source /opt/seguradora-app/.env
+          curl -fsS "http://127.0.0.1:${HOST_PORT:-3001}/api/stats"
+          echo
+
+      - name: Limpa snapshot temporário
+        run: docker exec seguradora-app rm -f /tmp/crm-seguros.db /tmp/crm-seguros.db-wal /tmp/crm-seguros.db-shm || true
